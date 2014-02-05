@@ -2,6 +2,8 @@ package mygame;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.audio.AudioNode;
+import com.jme3.bounding.BoundingVolume;
+import com.jme3.collision.CollisionResults;
 import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
@@ -34,7 +36,10 @@ public class Main extends SimpleApplication {
     boolean isRunning = true;
     
     float pSpeed = 4;
-    float ballSpeed = 4f;
+    float ballXSpeed = 4f;
+    float ballYSpeed = 3f;
+    float deltaX = 1;
+    float deltaY = 1;
 
     @Override
     public void simpleInitApp() 
@@ -64,14 +69,17 @@ public class Main extends SimpleApplication {
         
         ball.scale(0.10f);
         player.scale(0.10f);
-        block.scale(0.10f);
+        block.scale(0.075f);
         
         ball.setLocalTranslation(0, -1, 0);
         player.setLocalTranslation(0, -3.5f, 0);
         
         rootNode.attachChild(ball);
         rootNode.attachChild(player);
-//        rootNode.attachChild(block);
+        rootNode.attachChild(block);
+        
+        setDisplayFps(false); // to hide the FPS
+        setDisplayStatView(false); // to hide the statistics 
     }
     
     private void initKeys()
@@ -129,21 +137,45 @@ public class Main extends SimpleApplication {
     @Override
     public void simpleUpdate(float tpf) {
         //TODO: add update code
-        ballLogic(tpf);
+        if (isRunning)
+        {
+            ballLogic(tpf);
+        }
     }
     
     private void ballLogic(float tpf)
     {
         Vector3f b = ball.getLocalTranslation();
-        if (b.x > 5)
+        
+        CollisionResults results = new CollisionResults();
+        BoundingVolume ballBound = ball.getWorldBound();
+        
+        if (player.collideWith(ballBound, results) > 0)
         {
-            ballSpeed *= -1;
+            deltaY = 1;
         }
-        if (b.x < -5)
+        
+        if (b.x > 5.25)
         {
-            ballSpeed *= -1;
+            deltaX = -1;
+            System.out.println("X RIGHT HIT");
         }
-        ball.setLocalTranslation(b.x + ballSpeed * tpf, b.y, b.z);
+        if (b.x < -5.25)
+        {
+            deltaX = 1;
+            System.out.println("X LEFT HIT");
+        }
+        if (b.y > 4)
+        {
+            deltaY = -1;
+            System.out.println("Y TOP HIT");
+        }
+        if (b.y < -4)
+        {
+            deltaY = 1;
+            System.out.println("Y BOTTOM HIT");
+        }
+        ball.setLocalTranslation(b.x + ballXSpeed * tpf * deltaX, b.y + ballYSpeed * tpf * deltaY, b.z);
     }
 
     @Override
