@@ -14,6 +14,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Spatial;
+import java.util.LinkedList;
 
 /**
  * test
@@ -28,6 +29,8 @@ public class Main extends SimpleApplication {
     
     Spatial ball, player, block;
     BitmapText bitText;
+    
+    LinkedList<Spatial> blocks = new LinkedList();
     
     AudioNode ballHit;
     AudioNode blockSmash;
@@ -69,17 +72,46 @@ public class Main extends SimpleApplication {
         
         ball.scale(0.10f);
         player.scale(0.10f);
-        block.scale(0.075f);
+        block.scale(0.095f);
         
         ball.setLocalTranslation(0, -1, 0);
         player.setLocalTranslation(0, -3.5f, 0);
+//        block.setLocalTranslation(-1, 0.5f, 0);
         
         rootNode.attachChild(ball);
         rootNode.attachChild(player);
-        rootNode.attachChild(block);
+//        rootNode.attachChild(block);
+        drawBlocks(block);
         
         setDisplayFps(false); // to hide the FPS
         setDisplayStatView(false); // to hide the statistics 
+    }
+    
+    private void drawBlocks(Spatial b)
+    {
+        int rows = 3;
+        int columns = 5;
+        
+        int count = 0;
+        
+        float offset = 0.4f;
+        
+        float xPos = -columns + offset;
+        float yPos = 3.75f - offset;
+        
+        for (int i = -rows; i < rows; i++)
+        {
+            for (int j = -columns; j < columns; j++)
+            {
+                blocks.add(b.clone());
+                blocks.get(count).setLocalTranslation(xPos, yPos, 0);
+                rootNode.attachChild(blocks.get(count));
+                xPos += 1;
+                count++;
+            }
+            yPos -= 0.5;
+            xPos = -columns + offset;
+        }
     }
     
     private void initKeys()
@@ -140,7 +172,38 @@ public class Main extends SimpleApplication {
         if (isRunning)
         {
             ballLogic(tpf);
+            blockLogic();
         }
+    }
+    
+    private void blockLogic()
+    {
+        CollisionResults results = new CollisionResults();
+        BoundingVolume ballBound = ball.getWorldBound();
+        
+        for (int i = 0; i < blocks.size(); i++)
+        {
+            if(blocks.get(i).hasAncestor(rootNode))
+            {
+                if (blocks.get(i).collideWith(ballBound, results) > 0)
+                {
+                    blocks.get(i).removeFromParent();
+                    deltaY *= -1;
+                }
+            }
+        }
+//        if (block.hasAncestor(rootNode))
+//        {
+//            if (block.collideWith(ballBound, results) > 0)
+//            {
+//                if (block.removeFromParent())
+//                {
+//                    deltaY *= -1;
+//                }
+//    //            rootNode.detachChild(block);
+//    //            deltaY *= -1;
+//            }
+//        }
     }
     
     private void ballLogic(float tpf)
@@ -158,22 +221,18 @@ public class Main extends SimpleApplication {
         if (b.x > 5.25)
         {
             deltaX = -1;
-            System.out.println("X RIGHT HIT");
         }
         if (b.x < -5.25)
         {
             deltaX = 1;
-            System.out.println("X LEFT HIT");
         }
         if (b.y > 4)
         {
             deltaY = -1;
-            System.out.println("Y TOP HIT");
         }
         if (b.y < -4)
         {
             deltaY = 1;
-            System.out.println("Y BOTTOM HIT");
         }
         ball.setLocalTranslation(b.x + ballXSpeed * tpf * deltaX, b.y + ballYSpeed * tpf * deltaY, b.z);
     }
